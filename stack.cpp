@@ -20,7 +20,7 @@ enum StackErrors StackInit (Stack_t **stk, size_t cap)
     (*stk)->size = 0;
     (*stk)->data = (int*)calloc(cap, sizeof(stack_element));
     assert((*stk)->data);
-    (*stk)->hash = StackHash(*stk);                                                                                                                     printf("MEOW\n");
+    (*stk)->hash = StackHash(*stk);
 
     return STACK_OK;
 }
@@ -30,7 +30,7 @@ enum StackErrors StackPush(Stack_t *stk, stack_element val)
     enum StackErrors error = CheckStack(stk, STACK_OPERATIONS_PUSH);
     if(!error)
     {
-        stk->data[stk->size] = val;                                                                                                                  printf("MEOW\n");
+        stk->data[stk->size] = val;
         stk->size += 1;
         stk->hash = StackHash(stk);
 
@@ -46,7 +46,7 @@ enum StackErrors StackPush(Stack_t *stk, stack_element val)
 
 enum StackErrors StackPop(Stack_t *stk, stack_element *val)
 {
-    enum StackErrors error = CheckStack(stk, STACK_OPERATIONS_POP);                                                                                                                         printf("MEOW\n");
+    enum StackErrors error = CheckStack(stk, STACK_OPERATIONS_POP);
     if(!error)
     {
         stk->size -= 1;
@@ -64,7 +64,7 @@ enum StackErrors StackPop(Stack_t *stk, stack_element *val)
 }
 
 enum StackErrors CheckStack(Stack_t *stk, enum StackOperations op)
-{                                                                                                                                                                           printf("MEOW\n");
+{
     if(!stk)
     {
         return BAD_STACK_MAIN_POINTER;
@@ -163,7 +163,7 @@ const char* GetErrName(enum StackErrors err)
         break;
     }
 }
-// РАзобраться !!!!
+
 void InitSecurity()
 {
     srand((unsigned)time(NULL) ^ (uintptr_t)&SECRET_KEY);
@@ -173,8 +173,11 @@ void InitSecurity()
 uint64_t StackHash(Stack *st)
 {
     uint64_t h = SECRET_KEY;
-    h ^= st->size;     h *= 1099511628211ULL;
-    h ^= st->capacity; h *= 1099511628211ULL;
+    h ^= st->size;
+    h *= 1099511628211ULL;
+
+    h ^= st->capacity;
+    h *= 1099511628211ULL;
 
     for (ssize_t i = 0; i < st->size; i++) {
         h ^= (uint64_t)st->data[i];
