@@ -8,6 +8,7 @@ typedef int stack_element;
 #include <stdlib.h>
 #include <ctime>
 #include <cstdlib>
+#include <assert.h>
 
 extern uint64_t SECRET_KEY;
 
@@ -30,7 +31,7 @@ enum StackOperations
     STACK_OPERATIONS_POP  = 1
 };
 
-enum StackErrors StackInit(Stack_t *stk, size_t cap);
+enum StackErrors StackInit(Stack_t **stk, size_t cap);
 enum StackErrors StackPush(Stack_t *stk, stack_element val);
 enum StackErrors StackPop(Stack_t *stk, stack_element *val);
 enum StackErrors CheckStack(Stack_t *stk, enum StackOperations op);

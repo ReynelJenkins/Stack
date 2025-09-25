@@ -12,13 +12,15 @@ struct Stack
 };
 
 
-enum StackErrors StackInit (Stack_t *stk, size_t cap)
+enum StackErrors StackInit (Stack_t **stk, size_t cap)
 {
-    stk = (Stack_t *)calloc(1, sizeof(Stack_t));
-    stk->capacity = cap;
-    stk->size = 0;
-    stk->data = (int*)calloc(cap, sizeof(stack_element));
-    stk->hash = StackHash(stk);
+    *stk = (Stack_t *)calloc(1, sizeof(Stack_t));
+    assert(*stk);
+    (*stk)->capacity = cap;
+    (*stk)->size = 0;
+    (*stk)->data = (int*)calloc(cap, sizeof(stack_element));
+    assert((*stk)->data);
+    (*stk)->hash = StackHash(*stk);                                                                                                                     printf("MEOW\n");
 
     return STACK_OK;
 }
@@ -28,7 +30,7 @@ enum StackErrors StackPush(Stack_t *stk, stack_element val)
     enum StackErrors error = CheckStack(stk, STACK_OPERATIONS_PUSH);
     if(!error)
     {
-        stk->data[stk->size] = val;
+        stk->data[stk->size] = val;                                                                                                                  printf("MEOW\n");
         stk->size += 1;
         stk->hash = StackHash(stk);
 
@@ -44,7 +46,7 @@ enum StackErrors StackPush(Stack_t *stk, stack_element val)
 
 enum StackErrors StackPop(Stack_t *stk, stack_element *val)
 {
-    enum StackErrors error = CheckStack(stk, STACK_OPERATIONS_POP);
+    enum StackErrors error = CheckStack(stk, STACK_OPERATIONS_POP);                                                                                                                         printf("MEOW\n");
     if(!error)
     {
         stk->size -= 1;
@@ -62,7 +64,7 @@ enum StackErrors StackPop(Stack_t *stk, stack_element *val)
 }
 
 enum StackErrors CheckStack(Stack_t *stk, enum StackOperations op)
-{
+{                                                                                                                                                                           printf("MEOW\n");
     if(!stk)
     {
         return BAD_STACK_MAIN_POINTER;
