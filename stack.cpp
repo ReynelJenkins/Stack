@@ -12,13 +12,15 @@ struct Stack
 };
 
 
-enum StackErrors StackInit (Stack_t *stk, size_t cap)
+enum StackErrors StackInit (Stack_t **stk, size_t cap)
 {
-    stk = (Stack_t *)calloc(1, sizeof(Stack_t));
-    stk->capacity = cap;
-    stk->size = 0;
-    stk->data = (int*)calloc(cap, sizeof(stack_element));
-    stk->hash = StackHash(stk);
+    *stk = (Stack_t *)calloc(1, sizeof(Stack_t));
+    assert(*stk);
+    (*stk)->capacity = cap;
+    (*stk)->size = 0;
+    (*stk)->data = (int*)calloc(cap, sizeof(stack_element));
+    assert((*stk)->data);
+    (*stk)->hash = StackHash(*stk);
 
     return STACK_OK;
 }

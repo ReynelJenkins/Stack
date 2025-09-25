@@ -6,6 +6,8 @@
         "limits": "cpp",
         "new": "cpp",
         "type_traits": "cpp",
-        "utility": "cpp"
+        "utility": "cpp",
+        "array": "cpp",
+        "string": "cpp"
     }
 }
