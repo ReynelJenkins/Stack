@@ -10,9 +10,11 @@ typedef int stack_element;
 #include <cstdlib>
 #include <assert.h>
 
-extern uint64_t SECRET_KEY;
-
 typedef struct Stack Stack_t;
+
+const uint64_t CANARY = 0xDEADC0DE;
+const int DATA_CANARY = 0xDEAD;
+extern uint64_t SECRET_KEY;
 
 enum StackErrors
 {
@@ -43,7 +45,9 @@ int StackDumpFunc(  Stack_t *stk,
                     const char *func_name);
 const char* GetErrName(enum StackErrors err);
 void InitSecurity();
-uint64_t StackHash(Stack_t *st);
+uint64_t StackHash(Stack_t *stk);
+void DeleteStack(Stack_t **stk);
+enum StackErrors ExpandStack (Stack_t *stk, size_t new_cap);
 
 #define StackDump(s, err) StackDumpFunc(s, err, #s, __LINE__, __FILE__, __FUNCTION__)
 

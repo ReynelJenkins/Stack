@@ -1,25 +1,53 @@
 #include "stack.h"
 
+// uniou in C
 uint64_t SECRET_KEY = 0;
 
 struct Stack
 {
-    ssize_t capacity = 0;
-    ssize_t size = 0;
-    uint64_t hash = 0;
-
-    stack_element *data = nullptr;
+    uint64_t canary1;
+    ssize_t capacity;
+    ssize_t size;
+    uint64_t hash;
+    stack_element *data;
+    uint64_t canary2;
 };
 
+enum StackErrors ExpandStack (Stack_t *stk, size_t new_cap)
+{
+    assert(stk);
+
+    if (new_cap <= 0)
+    {
+        return BAD_STACK_CAPACITY;
+    }
+
+    stk->data = (int*)realloc(stk->data, (new_cap + 2) * sizeof(stack_element));
+    assert(stk->data);
+    stk->capacity = new_cap + 2;
+    (stk->data)[stk->capacity - 1] = DATA_CANARY;
+    stk->hash = StackHash(stk);
+
+    return STACK_OK;
+}
 
 enum StackErrors StackInit (Stack_t **stk, size_t cap)
 {
+    if (cap <= 0)
+    {
+        return BAD_STACK_CAPACITY;
+    }
+
     *stk = (Stack_t *)calloc(1, sizeof(Stack_t));
     assert(*stk);
-    (*stk)->capacity = cap;
-    (*stk)->size = 0;
-    (*stk)->data = (int*)calloc(cap, sizeof(stack_element));
+    (*stk)->capacity = cap + 2;
+    (*stk)->size = 1;
+    (*stk)->canary1 = CANARY;
+    (*stk)->canary2 = CANARY;
+    (*stk)->data = (int*)calloc(cap + 2, sizeof(stack_element));
     assert((*stk)->data);
+    ((*stk)->data)[0] = DATA_CANARY;
+    ((*stk)->data)[(*stk)->capacity - 1] = DATA_CANARY;
     (*stk)->hash = StackHash(*stk);
 
     return STACK_OK;
@@ -27,6 +55,8 @@ enum StackErrors StackInit (Stack_t **stk, size_t cap)
 
 enum StackErrors StackPush(Stack_t *stk, stack_element val)
 {
+    assert(stk);
+
     enum StackErrors error = CheckStack(stk, STACK_OPERATIONS_PUSH);
     if(!error)
     {
@@ -46,6 +76,9 @@ enum StackErrors StackPush(Stack_t *stk, stack_element val)
 
 enum StackErrors StackPop(Stack_t *stk, stack_element *val)
 {
+    assert(stk);
+    assert(val);
+
     enum StackErrors error = CheckStack(stk, STACK_OPERATIONS_POP);
     if(!error)
     {
@@ -65,9 +98,16 @@ enum StackErrors StackPop(Stack_t *stk, stack_element *val)
 
 enum StackErrors CheckStack(Stack_t *stk, enum StackOperations op)
 {
+    assert(stk);
+
     if(!stk)
     {
         return BAD_STACK_MAIN_POINTER;
+    }
+
+    if(stk->canary1 != CANARY || stk->canary2 != CANARY)
+    {
+        return BAD_STACK_CORRUPTED_DATA;
     }
 
     if(stk->capacity <= 0)
@@ -85,17 +125,22 @@ enum StackErrors CheckStack(Stack_t *stk, enum StackOperations op)
         return BAD_STACK_CORRUPTED_DATA;
     }
 
+    if((stk->data)[0] != DATA_CANARY || (stk->data)[stk->capacity - 1] != DATA_CANARY)
+    {
+        return BAD_STACK_CORRUPTED_DATA;
+    }
+
     switch(op)
     {
         case STACK_OPERATIONS_PUSH:
-            if (stk->size >= stk->capacity || stk->size < 0)
+            if (stk->size >= stk->capacity - 1 || stk->size < 1)
             {
                 return BAD_STACK_SIZE;
             }
             break;
 
         case STACK_OPERATIONS_POP:
-            if (stk->size > stk->capacity || stk->size <= 0)
+            if (stk->size > stk->capacity - 1 || stk->size <= 1)
             {
                 return BAD_STACK_SIZE;
             }
@@ -116,6 +161,10 @@ int StackDumpFunc(  Stack_t *stk,
                     const char *file_name,
                     const char *func_name)
 {
+    assert(var_name);
+    assert(file_name);
+    assert(func_name);
+
     printf("=====STACK DUMP=====\n");
 
     const char *err_name = GetErrName(err);
@@ -166,22 +215,29 @@ const char* GetErrName(enum StackErrors err)
 
 void InitSecurity()
 {
-    srand((unsigned)time(NULL) ^ (uintptr_t)&SECRET_KEY);
+    srand(time(NULL)); //    srand((unsigned)time(NULL) ^ (uintptr_t)&SECRET_KEY);
     SECRET_KEY = ((uint64_t)rand() << 32) ^ rand();
 }
-
-uint64_t StackHash(Stack *st)
+//DJB-2
+uint64_t StackHash(Stack *stk)
 {
     uint64_t h = SECRET_KEY;
-    h ^= st->size;
+    h ^= stk->size;
     h *= 1099511628211ULL;
 
-    h ^= st->capacity;
+    h ^= stk->capacity;
     h *= 1099511628211ULL;
 
-    for (ssize_t i = 0; i < st->size; i++) {
-        h ^= (uint64_t)st->data[i];
+    for (ssize_t i = 0; i < stk->capacity + 2; i++) {
+        h ^= (uint64_t)stk->data[i];
         h *= 1099511628211ULL;
     }
     return h;
+}
+
+void DeleteStack(Stack_t **stk)
+{
+    free((*stk)->data);
+    free(*stk);
+    *stk = nullptr;
 }
