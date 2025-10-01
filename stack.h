@@ -12,9 +12,10 @@ typedef int stack_element;
 
 typedef struct Stack Stack_t;
 
-const uint64_t CANARY = 0xDEADC0DE;
-const int DATA_CANARY = 0xDEAD;
-extern uint64_t SECRET_KEY;
+const stack_element CANARY = (int)0xDEADC0DE;
+
+extern uint64_t HASH_KEY;
+extern bool HASH_PROTECTION;
 
 enum StackErrors
 {
@@ -27,16 +28,12 @@ enum StackErrors
     BAD_STACK                = 6
 };
 
-enum StackOperations
-{
-    STACK_OPERATIONS_PUSH = 0,
-    STACK_OPERATIONS_POP  = 1
-};
-
-enum StackErrors StackInit(Stack_t **stk, size_t cap);
+enum StackErrors StackCtor(Stack_t **stk, ssize_t cap);
+enum StackErrors ExpandStack (Stack_t *stk, ssize_t new_cap);
+void DeleteStack(Stack_t **stk);
 enum StackErrors StackPush(Stack_t *stk, stack_element val);
 enum StackErrors StackPop(Stack_t *stk, stack_element *val);
-enum StackErrors CheckStack(Stack_t *stk, enum StackOperations op);
+enum StackErrors VerifyStackFunc(Stack_t *stk);
 int StackDumpFunc(  Stack_t *stk,
                     enum StackErrors err,
                     const char *var_name,
@@ -46,9 +43,15 @@ int StackDumpFunc(  Stack_t *stk,
 const char* GetErrName(enum StackErrors err);
 void InitSecurity();
 uint64_t StackHash(Stack_t *stk);
-void DeleteStack(Stack_t **stk);
-enum StackErrors ExpandStack (Stack_t *stk, size_t new_cap);
 
 #define StackDump(s, err) StackDumpFunc(s, err, #s, __LINE__, __FILE__, __FUNCTION__)
+#define VerifyStack(stk) do {                       \
+    enum StackErrors error = VerifyStackFunc(stk);  \
+    if(error)                                       \
+    {                                               \
+        StackDump(stk, error);                      \
+        return error;                               \
+    }                                               \
+} while(0)
 
 #endif //STACK_H

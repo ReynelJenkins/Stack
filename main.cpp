@@ -3,13 +3,11 @@
 
 int main()
 {
-    InitSecurity();
     Stack_t *my_stack = nullptr;
-    StackInit(&my_stack, 2);
+    StackCtor(&my_stack, 2);
     stack_element var = 123;
     StackPush(my_stack, 111);
     StackPush(my_stack, 222);
-    ExpandStack(my_stack, 5);
     StackPush(my_stack, 333);
     StackPop(my_stack, &var);
     printf("%d\n", var);
@@ -27,5 +25,15 @@ int main()
     StackPush(my_stack, 444);
     StackPush(my_stack, 444);
     StackPush(my_stack, 444);
+    StackPop(my_stack, &var);
+    printf("%d\n", var);
+    StackPop(my_stack, &var);
+    printf("%d\n", var);
+    StackPop(my_stack, &var);
+    printf("%d\n", var);
+    StackPop(my_stack, &var);
+    printf("%d\n", var);
+    StackPop(my_stack, &var);
+    printf("%d\n", var);
     return 0;
 }

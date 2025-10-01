@@ -1,37 +1,21 @@
 #include "stack.h"
 
-// uniou in C
-uint64_t SECRET_KEY = 0;
+uint64_t HASH_KEY = 0; // Ключ для хэш функции
+bool HASH_PROTECTION = false;
 
 struct Stack
 {
-    uint64_t canary1;
+    stack_element canary1;
+
     ssize_t capacity;
     ssize_t size;
     uint64_t hash;
     stack_element *data;
-    uint64_t canary2;
+
+    stack_element canary2;
 };
 
-enum StackErrors ExpandStack (Stack_t *stk, size_t new_cap)
-{
-    assert(stk);
-
-    if (new_cap <= 0)
-    {
-        return BAD_STACK_CAPACITY;
-    }
-
-    stk->data = (int*)realloc(stk->data, (new_cap + 2) * sizeof(stack_element));
-    assert(stk->data);
-    stk->capacity = new_cap + 2;
-    (stk->data)[stk->capacity - 1] = DATA_CANARY;
-    stk->hash = StackHash(stk);
-
-    return STACK_OK;
-}
-
-enum StackErrors StackInit (Stack_t **stk, size_t cap)
+enum StackErrors StackCtor (Stack_t **stk, ssize_t cap)
 {
     if (cap <= 0)
     {
@@ -39,67 +23,127 @@ enum StackErrors StackInit (Stack_t **stk, size_t cap)
     }
 
     *stk = (Stack_t *)calloc(1, sizeof(Stack_t));
-    assert(*stk);
-    (*stk)->capacity = cap + 2;
-    (*stk)->size = 1;
+    if(*stk == NULL)
+    {
+        return BAD_STACK_MAIN_POINTER;
+    }
+
     (*stk)->canary1 = CANARY;
     (*stk)->canary2 = CANARY;
-    (*stk)->data = (int*)calloc(cap + 2, sizeof(stack_element));
-    assert((*stk)->data);
-    ((*stk)->data)[0] = DATA_CANARY;
-    ((*stk)->data)[(*stk)->capacity - 1] = DATA_CANARY;
-    (*stk)->hash = StackHash(*stk);
+
+    (*stk)->data = (stack_element*)calloc(cap + 2, sizeof(stack_element));
+    if((*stk)->data == NULL)
+    {
+        free(*stk);
+        return BAD_STACK_DATA;
+    }
+
+    (*stk)->capacity = cap + 2; // + 2 для двух canary
+    (*stk)->size = 1;
+
+    ((*stk)->data)[0] = CANARY;
+    ((*stk)->data)[(*stk)->capacity - 1] = CANARY;
+
+    if (HASH_PROTECTION)
+    {
+        (*stk)->hash = StackHash(*stk);
+    }
 
     return STACK_OK;
 }
 
-enum StackErrors StackPush(Stack_t *stk, stack_element val)
+enum StackErrors ExpandStack (Stack_t *stk, ssize_t new_cap)
 {
-    assert(stk);
+    VerifyStack(stk);
 
-    enum StackErrors error = CheckStack(stk, STACK_OPERATIONS_PUSH);
-    if(!error)
+    if (new_cap <= 0)
     {
-        stk->data[stk->size] = val;
-        stk->size += 1;
+        return BAD_STACK_CAPACITY;
+    }
+
+    stk->data = (stack_element*)realloc(stk->data, (new_cap + 2) * sizeof(stack_element));
+    if(stk->data == NULL)
+    {
+        return BAD_STACK_DATA;
+    }
+
+    stk->capacity = new_cap + 2;
+    (stk->data)[stk->capacity - 1] = CANARY;
+
+    if (HASH_PROTECTION)
+    {
         stk->hash = StackHash(stk);
-
-        return STACK_OK;
     }
 
-    else
+    VerifyStack(stk);
+
+    return STACK_OK;
+}
+
+void DeleteStack(Stack_t **stk)
+{
+    free((*stk)->data);
+    free(*stk);
+    *stk = nullptr;
+}
+
+enum StackErrors StackPush(Stack_t *stk, stack_element val) //TODO: Переделать структуры функций StackPush StackPop
+{
+    //TODO: Убрать ассерты проверки стека тк в рилизе они отключатся
+    VerifyStack(stk);
+
+    if (stk->size < 1 || stk->size > stk->capacity - 1)
     {
-        StackDump(stk, error);
-        return error;
+        return BAD_STACK_SIZE;
     }
+
+    if (stk->size == stk->capacity - 1)
+    {
+        //TODO: расширение стека если не хватаем места
+        ExpandStack(stk, (stk->capacity - 2) * 2);
+
+        VerifyStack(stk);
+    }
+
+    stk->data[stk->size] = val;
+    stk->size += 1;
+
+    if (HASH_PROTECTION)
+    {
+        stk->hash = StackHash(stk);
+    }
+
+    VerifyStack(stk);
+
+    return STACK_OK;
 }
 
 enum StackErrors StackPop(Stack_t *stk, stack_element *val)
 {
-    assert(stk);
-    assert(val);
+    assert(val); //можно ли оставить ассерт на val?
 
-    enum StackErrors error = CheckStack(stk, STACK_OPERATIONS_POP);
-    if(!error)
+    VerifyStack(stk);
+
+    if (stk->size > stk->capacity - 1 || stk->size <= 1)
     {
-        stk->size -= 1;
-        *val = stk->data[stk->size];
+        return BAD_STACK_SIZE;
+    }
+
+    stk->size -= 1;
+    *val = stk->data[stk->size];
+
+    if (HASH_PROTECTION)
+    {
         stk->hash = StackHash(stk);
-
-        return STACK_OK;
     }
 
-    else
-    {
-        StackDump(stk, error);
-        return error;
-    }
+    VerifyStack(stk);
+
+    return STACK_OK;
 }
 
-enum StackErrors CheckStack(Stack_t *stk, enum StackOperations op)
+enum StackErrors VerifyStackFunc(Stack_t *stk)
 {
-    assert(stk);
-
     if(!stk)
     {
         return BAD_STACK_MAIN_POINTER;
@@ -120,35 +164,19 @@ enum StackErrors CheckStack(Stack_t *stk, enum StackOperations op)
         return BAD_STACK_DATA;
     }
 
-    if (stk->hash != StackHash(stk))
+    if (stk->size < 0)
+    {
+        return BAD_STACK_SIZE;
+    }
+
+    if (HASH_PROTECTION == true && stk->hash != StackHash(stk))
     {
         return BAD_STACK_CORRUPTED_DATA;
     }
 
-    if((stk->data)[0] != DATA_CANARY || (stk->data)[stk->capacity - 1] != DATA_CANARY)
+    if((stk->data)[0] != CANARY || (stk->data)[stk->capacity - 1] != CANARY)
     {
         return BAD_STACK_CORRUPTED_DATA;
-    }
-
-    switch(op)
-    {
-        case STACK_OPERATIONS_PUSH:
-            if (stk->size >= stk->capacity - 1 || stk->size < 1)
-            {
-                return BAD_STACK_SIZE;
-            }
-            break;
-
-        case STACK_OPERATIONS_POP:
-            if (stk->size > stk->capacity - 1 || stk->size <= 1)
-            {
-                return BAD_STACK_SIZE;
-            }
-            break;
-
-        default:
-            return BAD_STACK;
-            break;
     }
 
     return STACK_OK;
@@ -177,51 +205,53 @@ int StackDumpFunc(  Stack_t *stk,
 
 const char* GetErrName(enum StackErrors err)
 {
+    //TODO: Сравнивать со значениями enum
     switch(err)
     {
-    case 0:
-        return "STACK_OK";
-        break;
+        case STACK_OK:
+            return "STACK_OK";
+            break;
 
-    case 1:
-        return "BAD_STACK_MAIN_POINTER";
-        break;
+        case BAD_STACK_MAIN_POINTER:
+            return "BAD_STACK_MAIN_POINTER";
+            break;
 
-    case 2:
-        return "BAD_STACK_SIZE";
-        break;
+        case BAD_STACK_SIZE:
+            return "BAD_STACK_SIZE";
+            break;
 
-    case 3:
-        return "BAD_STACK_CAPACITY";
-        break;
+        case BAD_STACK_CAPACITY:
+            return "BAD_STACK_CAPACITY";
+            break;
 
-    case 4:
-        return "BAD_STACK_DATA";
-        break;
+        case BAD_STACK_DATA:
+            return "BAD_STACK_DATA";
+            break;
 
-    case 5:
-        return "BAD_STACK_CORRUPTED_DATA";
-        break;
+        case BAD_STACK_CORRUPTED_DATA:
+            return "BAD_STACK_CORRUPTED_DATA";
+            break;
 
-    case 6:
-        return "BAD_STACK";
-        break;
+        case BAD_STACK:
+            return "BAD_STACK";
+            break;
 
-    default:
-        return "UNDEFINED_ERROR";
-        break;
+        default:
+            return "UNDEFINED_ERROR";
+            break;
     }
 }
 
 void InitSecurity()
 {
-    srand(time(NULL)); //    srand((unsigned)time(NULL) ^ (uintptr_t)&SECRET_KEY);
-    SECRET_KEY = ((uint64_t)rand() << 32) ^ rand();
+    srand(time(NULL));
+    HASH_KEY = ((uint64_t)rand() << 32) ^ rand();
+    HASH_PROTECTION = true;
 }
-//DJB-2
+
 uint64_t StackHash(Stack *stk)
 {
-    uint64_t h = SECRET_KEY;
+    uint64_t h = HASH_KEY;
     h ^= stk->size;
     h *= 1099511628211ULL;
 
@@ -233,11 +263,4 @@ uint64_t StackHash(Stack *stk)
         h *= 1099511628211ULL;
     }
     return h;
-}
-
-void DeleteStack(Stack_t **stk)
-{
-    free((*stk)->data);
-    free(*stk);
-    *stk = nullptr;
 }
