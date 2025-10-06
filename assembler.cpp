@@ -68,11 +68,12 @@ int *TranslateToByteCode(FILE *f, int *code_size)
 
         if(pos > size - 2)
         {
-            code = (int *)realloc(code, size * 2 * sizeof(int));
+            int *new_code = (int *)realloc(code, size * 2 * sizeof(int))
             if (code == NULL)
             {
                 return 0;
             }
+            code = new_code;
             size *= 2;
         }
 

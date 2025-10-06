@@ -46,6 +46,7 @@ void InitSecurity();
 uint64_t StackHash(Stack_t *stk);
 
 #define StackDump(s, err) StackDumpFunc(s, err, #s, __LINE__, __FILE__, __FUNCTION__)
+
 #define VerifyStack(stk) do {                       \
     enum StackErrors error = VerifyStackFunc(stk);  \
     if(error)                                       \

@@ -50,17 +50,17 @@ enum SPUState LoadCodeFromFile(FILE *f, struct SPU *spu)
         if (pos >= capacity)
         {
             capacity *= 2;
-            spu->code = (int *)realloc(spu->code, capacity * sizeof(int));
-            if(spu->code == NULL)
+            int *new_code = (int *)realloc(spu->code, capacity * sizeof(int));
+            if(new_code == NULL)
             {
                 return SPU_BAD_CODE;
             }
+            spu->code = new_code;
         }
 
         spu->code[pos++] = num;
     }
 
-    spu->code = (int *)realloc(spu->code, pos * sizeof(int));
     if(spu->code == NULL)
     {
         return SPU_BAD_CODE;
@@ -177,7 +177,7 @@ int SPUDumpFunc(  struct SPU *spu,
         printf(" ");
     }
     printf("^^\n");
-    //TODO: Добавить ^^^^ под номерном исполняемой команды
+
     return 1;
 }
 
