@@ -34,8 +34,6 @@ enum SPUState
     SPU_BAD_CODE_SIZE       = 8
 };
 
-FILE *my_fopen(const char *filename, const char *type);
-
 enum SPUState LoadCodeFromFile(FILE *f, struct SPU *spu);
 
 enum SPUState SPUCtor(struct SPU *spu, int start_stack_size);

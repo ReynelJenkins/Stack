@@ -1,6 +1,7 @@
 #include "SoftProcessor.h"
 #include "stack.h"
 #include "processor.h"
+#include "file.h"
 
 
 //TODO: Fix verificator, spudump
@@ -9,9 +10,9 @@ int main()
     SPU my_spu;
     SPUCtor(&my_spu, START_STACK_SIZE);
 
-    FILE *f = my_fopen(BYTE_CODE_SOURCE_FILE, "r");
-    LoadCodeFromFile(f, &my_spu);
-    fclose(f);
+    FILE *file = my_fopen(BYTE_CODE_SOURCE_FILE, "r");
+    LoadCodeFromFile(file, &my_spu);
+    fclose(file);
 
     ExecuteCode(&my_spu);
 
@@ -189,7 +190,7 @@ enum SPUState ExecuteCode(struct SPU *spu)
     int reg_num = 0;
     int command = 0;
 
-    while(spu->ip >= spu->code_size && command != CMD_HLT)
+    while(spu->ip <= spu->code_size && command != CMD_HLT)
     {
         VerifySPU(spu);
 
@@ -262,18 +263,4 @@ enum SPUState ExecuteCode(struct SPU *spu)
     VerifySPU(spu);
 
     return SPU_OK;
-}
-
-FILE *my_fopen(const char *filename, const char *type)
-{
-    assert(filename);
-    assert(type);
-
-    FILE *f = fopen(filename, type);
-    if (f == NULL)
-    {
-        printf("Ошибка: не удалось открыть файл %s\n", filename);
-        return nullptr;
-    }
-    return f;
 }

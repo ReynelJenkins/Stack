@@ -1,35 +1,22 @@
 #include "SoftProcessor.h"
 #include "assembler.h"
+#include "file.h"
 
 int main()
 {
-    FILE *f = my_fopen("source.asm", "r");
+    FILE *file = my_fopen("source.asm", "r");
 
     int size = 0;
-    int *code = TranslateToByteCode(f, &size);
+    int *code = TranslateToByteCode(file, &size);
 
-    fclose(f);
+    fclose(file);
 
-    f = my_fopen("byte_code.bin", "w");
+    file = my_fopen("byte_code.bin", "w");
 
-    WriteByteCode(f, code, size);
+    WriteByteCode(file, code, size);
 
-    fclose(f);
+    fclose(file);
 
-}
-
-FILE *my_fopen(const char *filename, const char *type)
-{
-    assert(filename);
-    assert(type);
-
-    FILE *f = fopen(filename, type);
-    if (f == NULL)
-    {
-        printf("Ошибка: не удалось открыть файл %s\n", filename);
-        return nullptr;
-    }
-    return f;
 }
 
 int *TranslateToByteCode(FILE *f, int *code_size)
@@ -68,7 +55,7 @@ int *TranslateToByteCode(FILE *f, int *code_size)
 
         if(pos > size - 2)
         {
-            int *new_code = (int *)realloc(code, size * 2 * sizeof(int))
+            int *new_code = (int *)realloc(code, size * 2 * sizeof(int));
             if (code == NULL)
             {
                 return 0;
