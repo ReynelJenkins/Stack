@@ -15,6 +15,8 @@ struct Stack
     stack_element canary2;
 };
 
+
+//TODO: упорядочить функции по логическому смыслу
 enum StackErrors StackCtor (Stack_t **stk, ssize_t cap)
 {
     if (cap <= 0)
@@ -195,7 +197,7 @@ int StackDumpFunc(  Stack_t *stk,
 
     printf("=====STACK DUMP=====\n");
 
-    const char *err_name = GetErrName(err);
+    const char *err_name = StackGetErrName(err);
     printf("Stack error (%d) - %s\n", err, err_name);
 
     printf("Location: %s:%d in function %s\n", file_name, line, func_name);
@@ -203,7 +205,17 @@ int StackDumpFunc(  Stack_t *stk,
     return 1;
 }
 
-const char* GetErrName(enum StackErrors err)
+void PrintStack(Stack_t *stk)
+{
+    for(int i = 1; i < stk->size; i++)
+    {
+        printf("%d ", stk->data[i]);
+    }
+
+    printf("\n");
+}
+
+const char* StackGetErrName(enum StackErrors err)
 {
     //TODO: Сравнивать со значениями enum
     switch(err)

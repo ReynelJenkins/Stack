@@ -40,7 +40,8 @@ int StackDumpFunc(  Stack_t *stk,
                     const int line,
                     const char *file_name,
                     const char *func_name);
-const char* GetErrName(enum StackErrors err);
+void PrintStack(Stack_t *stk);
+const char* StackGetErrName(enum StackErrors err);
 void InitSecurity();
 uint64_t StackHash(Stack_t *stk);
 
