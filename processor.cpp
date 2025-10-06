@@ -189,7 +189,7 @@ enum SPUState ExecuteCode(struct SPU *spu)
     int reg_num = 0;
     int command = 0;
 
-    while(spu->ip != spu->code_size && command != CMD_HLT)
+    while(spu->ip >= spu->code_size && command != CMD_HLT)
     {
         VerifySPU(spu);
 
