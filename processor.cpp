@@ -10,7 +10,7 @@ int main()
     SPU my_spu;
     SPUCtor(&my_spu, START_STACK_SIZE);
 
-    FILE *file = my_fopen(BYTE_CODE_SOURCE_FILE, "r");
+    FILE *file = my_fopen(BYTE_CODE_SOURCE_FILE, "rb");
     LoadCodeFromFile(file, &my_spu);
     fclose(file);
 
@@ -36,37 +36,30 @@ enum SPUState SPUDtor(struct SPU *spu)
 
 enum SPUState LoadCodeFromFile(FILE *f, struct SPU *spu)
 {
-    int num = 0;
-    int pos = 0;
-    int capacity = START_CODE_SIZE;
+    int signature = 0;
+    int version = 0;
+    int code_count = 0;
 
-    spu->code = (int *)calloc(START_CODE_SIZE, sizeof(int));
-    if (spu->code == NULL)
+    fread(&signature, sizeof(int), 1, f);
+    fread(&version, sizeof(int), 1, f);
+    fread(&code_count, sizeof(int), 1, f);
+
+    int *file_code = (int *)calloc(code_count + HEADER_SIZE, sizeof(int));
+
+    if(file_code == NULL)
     {
+        printf("ERROR");
         return SPU_BAD_CODE;
     }
+    file_code[0] = signature;
+    file_code[1] = version;
+    file_code[2] = code_count;
 
-    while(fscanf(f, "%d", &num) == 1)
-    {
-        if (pos >= capacity)
-        {
-            capacity *= 2;
-            int *new_code = (int *)realloc(spu->code, capacity * sizeof(int));
-            if(new_code == NULL)
-            {
-                return SPU_BAD_CODE;
-            }
-            spu->code = new_code;
-        }
+    fread(&file_code[HEADER_SIZE], sizeof(int), code_count, f);
 
-        spu->code[pos++] = num;
-    }
+    spu->code_size = code_count + HEADER_SIZE;
 
-    if(spu->code == NULL)
-    {
-        return SPU_BAD_CODE;
-    }
-    spu->code_size = pos;
+    spu->code = file_code;
 
     VerifySPU(spu);
 
@@ -93,7 +86,7 @@ enum SPUState VerifySPUFunc(struct SPU *spu)
         return SPU_BAD_CODE_SIZE;
     }
 
-    if(spu->code[0] != COMMANDS_VERSION)
+    if(spu->code[1] != COMMANDS_VERSION)
     {
         return SPU_VERSION_NOT_OK;
     }//TODO: VERIFY SPU
@@ -188,7 +181,7 @@ enum SPUState ExecuteCode(struct SPU *spu)
     int b = 0;
     int val = 0;
     int reg_num = 0;
-    int command = 0;
+    int command = -1;
 
     while(spu->ip <= spu->code_size && command != CMD_HLT)
     {
@@ -220,7 +213,7 @@ enum SPUState ExecuteCode(struct SPU *spu)
 
             case CMD_OUT:
                 StackPop(spu->stk, &val);
-                printf("%d", val);
+                printf("%d\n", val);
                 spu->ip++;
                 break;
 
@@ -250,13 +243,107 @@ enum SPUState ExecuteCode(struct SPU *spu)
                 StackPush(spu->stk, b - a);
                 break;
 
+            case CMD_JB:
+                StackPop(spu->stk, &b);
+                StackPop(spu->stk, &a);
+                if(a < b)
+                {
+                    spu->ip = spu->code[spu->ip + 1] + HEADER_SIZE;
+                }
+
+                else
+                {
+                    spu->ip += 2;
+                }
+
+                break;
+
+            case CMD_JBE:
+                StackPop(spu->stk, &b);
+                StackPop(spu->stk, &a);
+
+                if(a <= b)
+                {
+                    spu->ip = spu->code[spu->ip + 1] + HEADER_SIZE;
+                }
+
+                else
+                {
+                    spu->ip += 2;
+                }
+
+                break;
+
+            case CMD_JA:
+                StackPop(spu->stk, &b);
+                StackPop(spu->stk, &a);
+
+                if(a > b)
+                {
+                    spu->ip = spu->code[spu->ip + 1] + HEADER_SIZE;
+                }
+
+                else
+                {
+                    spu->ip += 2;
+                }
+
+                break;
+
+            case CMD_JAE:
+                StackPop(spu->stk, &b);
+                StackPop(spu->stk, &a);
+
+                if(a >= b)
+                {
+                    spu->ip = spu->code[spu->ip + 1] + HEADER_SIZE;
+                }
+
+                else
+                {
+                    spu->ip += 2;
+                }
+
+                break;
+
+            case CMD_JE:
+                StackPop(spu->stk, &b);
+                StackPop(spu->stk, &a);
+
+                if(a == b)
+                {
+                    spu->ip = spu->code[spu->ip + 1] + HEADER_SIZE;
+                }
+
+                else
+                {
+                    spu->ip += 2;
+                }
+
+                break;
+
+            case CMD_JNE:
+                StackPop(spu->stk, &b);
+                StackPop(spu->stk, &a);
+
+                if(a != b)
+                {
+                    spu->ip = spu->code[spu->ip + 1] + HEADER_SIZE;
+                }
+
+                else
+                {
+                    spu->ip += 2;
+                }
+
+                break;
+
             case CMD_HLT:
                 break;
 
             default:
                 break;
         }
-
         VerifySPU(spu);
     }
 

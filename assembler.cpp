@@ -11,7 +11,7 @@ int main()
 
     fclose(file);
 
-    file = my_fopen("byte_code.bin", "w");
+    file = my_fopen("byte_code.bin", "wb");
 
     WriteByteCode(file, code, size);
 
@@ -31,15 +31,15 @@ int *TranslateToByteCode(FILE *f, int *code_size)
     }
 
     int size = START_CODE_SIZE;
-    int pos = 1;
-    int line = 1;
-    code[0] = COMMANDS_VERSION;
+    int pos = 0;
+    int line = 0;
     int val = 0;
     char reg_name[8];
 
     char cmdstr[MAX_COMMAND_SIZE] = {};
     while (fgets(cmdstr, sizeof(cmdstr), f) != NULL)
     {
+        line++;
         char *comment = strchr(cmdstr, ';');
         if(comment != NULL)
         {
@@ -52,7 +52,6 @@ int *TranslateToByteCode(FILE *f, int *code_size)
         {
             continue;
         }
-
         if(pos > size - 2)
         {
             int *new_code = (int *)realloc(code, size * 2 * sizeof(int));
@@ -115,12 +114,52 @@ int *TranslateToByteCode(FILE *f, int *code_size)
             code[pos++] = CMD_SUB;
         }
 
+        else if (strcmp(cmd, "JB") == 0)
+        {
+            sscanf(cmdstr, "%*s %d", &val);
+            code[pos++] = CMD_JB;
+            code[pos++] = val;
+        }
+
+        else if (strcmp(cmd, "JBE") == 0)
+        {
+            sscanf(cmdstr, "%*s %d", &val);
+            code[pos++] = CMD_JBE;
+            code[pos++] = val;
+        }
+
+        else if (strcmp(cmd, "JA") == 0)
+        {
+            sscanf(cmdstr, "%*s %d", &val);
+            code[pos++] = CMD_JA;
+            code[pos++] = val;
+        }
+
+        else if (strcmp(cmd, "JAE") == 0)
+        {
+            sscanf(cmdstr, "%*s %d", &val);
+            code[pos++] = CMD_JAE;
+            code[pos++] = val;
+        }
+
+        else if (strcmp(cmd, "JE") == 0)
+        {
+            sscanf(cmdstr, "%*s %d", &val);
+            code[pos++] = CMD_JE;
+            code[pos++] = val;
+        }
+
+        else if (strcmp(cmd, "JNE") == 0)
+        {
+            sscanf(cmdstr, "%*s %d", &val);
+            code[pos++] = CMD_JNE;
+            code[pos++] = val;
+        }
+
         else
         {
             printf("Syntax error! source.asm:%d\n", line);
         }
-
-        line++;
     }
 
     *code_size = pos;
@@ -171,17 +210,19 @@ int GetRegNumber(const char *reg_name)
     return -1;
 }
 
-int WriteByteCode(FILE *f, int *code, int size)
+int WriteByteCode(FILE *file, int *code, int size)
 {
-    assert(f);
+    assert(file);
     assert(code);
+    //TODO: BINARY
 
-    for (int i = 0; i < size - 1; i++)
-    {
-        fprintf(f, "%d ", code[i]);
-    }
+    fwrite(&SIGN, sizeof(int), 1, file);
 
-    fprintf(f, "%d", code[size - 1]);
+    fwrite(&COMMANDS_VERSION, sizeof(int), 1, file);
+
+    fwrite(&size, sizeof(int), 1, file);
+
+    fwrite(code, sizeof(int), size, file);
 
     return 1;
 }

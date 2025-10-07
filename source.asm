@@ -1,17 +1,16 @@
-PUSH 1
-POPREG AX
-PUSH 10
-POPREG BX
-PUSH 6
-POPREG CX
-PUSHREG BX
-PUSHREG BX
-MUL
-PUSH 4
+   PUSH 10
+        POPREG AX
 PUSHREG AX
-PUSHREG CX
+PUSHREG AX
 MUL
-MUL
-SUB
 OUT
+      PUSHREG AX
+                PUSH 1
+SUB
+POPREG AX
+PUSHREG AX
+PUSH 1
+JAE 4
 HLT
+; TODO: Решение квадратного уравнения с разбором всех случаев если ур е сводится к линейному то печатаем -1
+; 2-ая часть решение вообще всех ур й

@@ -16,7 +16,7 @@ struct SPU
 {
     int *code = nullptr;
     int code_size = 0;
-    int ip = 1;
+    int ip = HEADER_SIZE;
     int regs[8] = {};
     Stack_t *stk = nullptr;
 };
