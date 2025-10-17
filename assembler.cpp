@@ -92,7 +92,13 @@ int *TranslateToByteCode(FILE *f, int *code_size)
 
         else if (strcmp(cmd, "PUSH") == 0)
         {
-            sscanf(cmdstr, "%*s %d", &val);
+            if (sscanf(cmdstr, "%*s %d", &val) != 1)
+            {
+                printf("Invalid value (line %d)\n", line);
+                free(code);
+
+                return NULL;
+            }
             code[pos++] = CMD_PUSH;
             code[pos++] = val;
         }
@@ -114,14 +120,28 @@ int *TranslateToByteCode(FILE *f, int *code_size)
 
         else if (strcmp(cmd, "PUSHREG") == 0)
         {
-            sscanf(cmdstr, "%*s %s", reg_name);
+            if (sscanf(cmdstr, "%*s %s", reg_name))
+            {
+                printf("Invalid register name (line %d)\n", line);
+                free(code);
+
+                return NULL;
+            }
+
             code[pos++] = CMD_PUSHREG;
             code[pos++] = GetRegNumber(reg_name);
         }
 
         else if (strcmp(cmd, "POPREG") == 0)
         {
-            sscanf(cmdstr, "%*s %s", reg_name);
+            if (sscanf(cmdstr, "%*s %s", reg_name) != 1)
+            {
+                printf("Invalid register name (line %d)\n", line);
+                free(code);
+
+                return NULL;
+            }
+
             code[pos++] = CMD_POPREG;
             code[pos++] = GetRegNumber(reg_name);
         }
@@ -136,12 +156,31 @@ int *TranslateToByteCode(FILE *f, int *code_size)
             code[pos++] = CMD_SUB;
         }
 
-        else if (strcmp(cmd, "JB") == 0)
+        else if (strcmp(cmd, "JB") == 0 || strcmp(cmd, "JBE") == 0 ||
+                 strcmp(cmd, "JA") == 0 || strcmp(cmd, "JAE") == 0 ||
+                 strcmp(cmd, "JE") == 0 || strcmp(cmd, "JNE") == 0 ||
+                 strcmp(cmd, "JMP") == 0)
         {
-            char arg[32];
-            sscanf(cmdstr, "%*s %s", arg);
+            char arg[32] = {};
 
-            code[pos++] = CMD_JB;
+            if (sscanf(cmdstr, "%*s %s", arg) != 1)
+            {
+                    printf("Invalid jump target '%s' (line %d)\n", arg, line);
+                    free(code);
+
+                    return NULL;
+            }
+
+            int opcode = -1;
+            if (strcmp(cmd, "JB") == 0) opcode = CMD_JB;
+            else if (strcmp(cmd, "JBE") == 0) opcode = CMD_JBE;
+            else if (strcmp(cmd, "JA") == 0) opcode = CMD_JA;
+            else if (strcmp(cmd, "JAE") == 0) opcode = CMD_JAE;
+            else if (strcmp(cmd, "JE") == 0) opcode = CMD_JE;
+            else if (strcmp(cmd, "JNE") == 0) opcode = CMD_JNE;
+            else if (strcmp(cmd, "JMP") == 0) opcode = CMD_JMP;
+
+            code[pos++] = opcode;
 
             if (arg[0] == ':')
             {
@@ -150,121 +189,13 @@ int *TranslateToByteCode(FILE *f, int *code_size)
 
             else
             {
-                sscanf(arg, "%d", &val);
-                code[pos++] = val;
-            }
-        }
+                if (sscanf(arg, "%d", &val) != 1)
+                {
+                    printf("Invalid jump target '%s' (line %d)\n", arg, line);
+                    free(code);
 
-        else if (strcmp(cmd, "JBE") == 0)
-        {
-            char arg[32];
-            sscanf(cmdstr, "%*s %s", arg);
-
-            code[pos++] = CMD_JBE;
-
-            if (arg[0] == ':')
-            {
-                code[pos++] = GetLabelPos(arg + 1);
-            }
-
-            else
-            {
-                sscanf(arg, "%d", &val);
-                code[pos++] = val;
-            }
-        }
-
-        else if (strcmp(cmd, "JA") == 0)
-        {
-            char arg[32];
-            sscanf(cmdstr, "%*s %s", arg);
-
-            code[pos++] = CMD_JA;
-
-            if (arg[0] == ':')
-            {
-                code[pos++] = GetLabelPos(arg + 1);
-            }
-
-            else
-            {
-                sscanf(arg, "%d", &val);
-                code[pos++] = val;
-            }
-        }
-
-        else if (strcmp(cmd, "JAE") == 0)
-        {
-            char arg[32];
-            sscanf(cmdstr, "%*s %s", arg);
-
-            code[pos++] = CMD_JAE;
-
-            if (arg[0] == ':')
-            {
-                code[pos++] = GetLabelPos(arg + 1);
-            }
-
-            else
-            {
-                sscanf(arg, "%d", &val);
-                code[pos++] = val;
-            }
-        }
-
-        else if (strcmp(cmd, "JE") == 0)
-        {
-            char arg[32];
-            sscanf(cmdstr, "%*s %s", arg);
-
-            code[pos++] = CMD_JE;
-
-            if (arg[0] == ':')
-            {
-                code[pos++] = GetLabelPos(arg + 1);
-            }
-
-            else
-            {
-                sscanf(arg, "%d", &val);
-                code[pos++] = val;
-            }
-        }
-
-        else if (strcmp(cmd, "JNE") == 0)
-        {
-            char arg[32];
-            sscanf(cmdstr, "%*s %s", arg);
-
-            code[pos++] = CMD_JNE;
-
-            if (arg[0] == ':')
-            {
-                code[pos++] = GetLabelPos(arg + 1);
-            }
-
-            else
-            {
-                sscanf(arg, "%d", &val);
-                code[pos++] = val;
-            }
-        }
-
-        else if (strcmp(cmd, "JMP") == 0)
-        {
-            char arg[32];
-            sscanf(cmdstr, "%*s %s", arg);
-
-            code[pos++] = CMD_JMP;
-
-            if (arg[0] == ':')
-            {
-                code[pos++] = GetLabelPos(arg + 1);
-            }
-
-            else
-            {
-                sscanf(arg, "%d", &val);
+                    return NULL;
+                }
                 code[pos++] = val;
             }
         }
@@ -272,6 +203,9 @@ int *TranslateToByteCode(FILE *f, int *code_size)
         else
         {
             printf("Syntax error! source.asm:%d\n", line);
+            free(code);
+
+            return NULL;
         }
     }
 
@@ -289,6 +223,11 @@ int GetLabelPos(const char *label)
         {
             return labels[i].addr;
         }
+    }
+
+    if (SecondRun == 1)
+    {
+        return -2;
     }
 
     SecondRun = 1;
