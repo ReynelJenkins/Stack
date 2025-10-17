@@ -338,6 +338,13 @@ enum SPUState ExecuteCode(struct SPU *spu)
 
                 break;
 
+
+            case CMD_JMP:
+
+                spu->ip = spu->code[spu->ip + 1] + HEADER_SIZE;
+
+                break;
+
             case CMD_HLT:
                 break;
 

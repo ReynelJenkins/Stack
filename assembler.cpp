@@ -9,6 +9,13 @@ int main()
     int size = 0;
     int *code = TranslateToByteCode(file, &size);
 
+    if (SecondRun == 1)
+    {
+        rewind(file);
+
+        code = TranslateToByteCode(file, &size);
+    }
+
     fclose(file);
 
     file = my_fopen("byte_code.bin", "wb");
@@ -52,10 +59,25 @@ int *TranslateToByteCode(FILE *f, int *code_size)
         {
             continue;
         }
+
+        if (cmd[0] == ':')
+        {
+            if (label_count >= MAX_LABELS) {
+                printf("Too many labels!\n");
+                return 0;
+            }
+
+            strcpy(labels[label_count].name, cmd + 1);
+            labels[label_count].addr = pos;
+            label_count++;
+
+            continue;
+        }
+
         if(pos > size - 2)
         {
             int *new_code = (int *)realloc(code, size * 2 * sizeof(int));
-            if (code == NULL)
+            if (new_code == NULL)
             {
                 return 0;
             }
@@ -116,44 +138,135 @@ int *TranslateToByteCode(FILE *f, int *code_size)
 
         else if (strcmp(cmd, "JB") == 0)
         {
-            sscanf(cmdstr, "%*s %d", &val);
+            char arg[32];
+            sscanf(cmdstr, "%*s %s", arg);
+
             code[pos++] = CMD_JB;
-            code[pos++] = val;
+
+            if (arg[0] == ':')
+            {
+                code[pos++] = GetLabelPos(arg + 1);
+            }
+
+            else
+            {
+                sscanf(arg, "%d", &val);
+                code[pos++] = val;
+            }
         }
 
         else if (strcmp(cmd, "JBE") == 0)
         {
-            sscanf(cmdstr, "%*s %d", &val);
+            char arg[32];
+            sscanf(cmdstr, "%*s %s", arg);
+
             code[pos++] = CMD_JBE;
-            code[pos++] = val;
+
+            if (arg[0] == ':')
+            {
+                code[pos++] = GetLabelPos(arg + 1);
+            }
+
+            else
+            {
+                sscanf(arg, "%d", &val);
+                code[pos++] = val;
+            }
         }
 
         else if (strcmp(cmd, "JA") == 0)
         {
-            sscanf(cmdstr, "%*s %d", &val);
+            char arg[32];
+            sscanf(cmdstr, "%*s %s", arg);
+
             code[pos++] = CMD_JA;
-            code[pos++] = val;
+
+            if (arg[0] == ':')
+            {
+                code[pos++] = GetLabelPos(arg + 1);
+            }
+
+            else
+            {
+                sscanf(arg, "%d", &val);
+                code[pos++] = val;
+            }
         }
 
         else if (strcmp(cmd, "JAE") == 0)
         {
-            sscanf(cmdstr, "%*s %d", &val);
+            char arg[32];
+            sscanf(cmdstr, "%*s %s", arg);
+
             code[pos++] = CMD_JAE;
-            code[pos++] = val;
+
+            if (arg[0] == ':')
+            {
+                code[pos++] = GetLabelPos(arg + 1);
+            }
+
+            else
+            {
+                sscanf(arg, "%d", &val);
+                code[pos++] = val;
+            }
         }
 
         else if (strcmp(cmd, "JE") == 0)
         {
-            sscanf(cmdstr, "%*s %d", &val);
+            char arg[32];
+            sscanf(cmdstr, "%*s %s", arg);
+
             code[pos++] = CMD_JE;
-            code[pos++] = val;
+
+            if (arg[0] == ':')
+            {
+                code[pos++] = GetLabelPos(arg + 1);
+            }
+
+            else
+            {
+                sscanf(arg, "%d", &val);
+                code[pos++] = val;
+            }
         }
 
         else if (strcmp(cmd, "JNE") == 0)
         {
-            sscanf(cmdstr, "%*s %d", &val);
+            char arg[32];
+            sscanf(cmdstr, "%*s %s", arg);
+
             code[pos++] = CMD_JNE;
-            code[pos++] = val;
+
+            if (arg[0] == ':')
+            {
+                code[pos++] = GetLabelPos(arg + 1);
+            }
+
+            else
+            {
+                sscanf(arg, "%d", &val);
+                code[pos++] = val;
+            }
+        }
+
+        else if (strcmp(cmd, "JMP") == 0)
+        {
+            char arg[32];
+            sscanf(cmdstr, "%*s %s", arg);
+
+            code[pos++] = CMD_JMP;
+
+            if (arg[0] == ':')
+            {
+                code[pos++] = GetLabelPos(arg + 1);
+            }
+
+            else
+            {
+                sscanf(arg, "%d", &val);
+                code[pos++] = val;
+            }
         }
 
         else
@@ -166,6 +279,21 @@ int *TranslateToByteCode(FILE *f, int *code_size)
     code = (int *)realloc(code, pos * sizeof(int));
 
     return code;
+}
+
+int GetLabelPos(const char *label)
+{
+    for (int i = 0; i < label_count; i++)
+    {
+        if (strcmp(labels[i].name, label) == 0)
+        {
+            return labels[i].addr;
+        }
+    }
+
+    SecondRun = 1;
+
+    return -1;
 }
 
 int GetRegNumber(const char *reg_name)
@@ -214,7 +342,6 @@ int WriteByteCode(FILE *file, int *code, int size)
 {
     assert(file);
     assert(code);
-    //TODO: BINARY
 
     fwrite(&SIGN, sizeof(int), 1, file);
 

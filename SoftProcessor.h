@@ -32,6 +32,7 @@ enum CMD
     CMD_JAE     = 12,
     CMD_JE      = 13,
     CMD_JNE     = 14,
+    CMD_JMP     = 15,
 };
 
 #endif //SOFTPROCESSOR_H
