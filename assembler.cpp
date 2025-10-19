@@ -16,7 +16,7 @@ int main(int argc, char *argv[])
     int size = 0;
     int *code = TranslateToByteCode(file, &size);
 
-    if (SecondRunRequired == 1)
+    if (second_run_required == 1)
     {
         rewind(file);
 
@@ -116,7 +116,7 @@ int *TranslateToByteCode(FILE *f, int *code_size)
         }
     }
 
-    SecondRunStarted = 1;
+    pass++;
 
     *code_size = asm_vals.pos;
 
@@ -224,12 +224,12 @@ int GetLabelPos(const char *label)
         }
     }
 
-    if(SecondRunStarted == 1)
+    if(pass == 2)
     {
         return -2;
     }
 
-    SecondRunRequired = 1;
+    second_run_required = 1;
 
     return -1;
 }

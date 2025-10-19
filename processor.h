@@ -1,6 +1,8 @@
 #ifndef PROCESSOR_H
 #define PROCESSOR_H
 
+#include <math.h>
+
 #define SPUDump(s) SPUDumpFunc(s, #s, __LINE__, __FILE__, __FUNCTION__)
 
 #define VerifySPU(spu) do {                         \
@@ -56,6 +58,7 @@ void handle_PUSH(SPU* spu);
 void handle_DIV(SPU* spu);
 void handle_MUL(SPU* spu);
 void handle_SUB(SPU* spu);
+void handle_SQRT(SPU* spu);
 
 void handle_IN(SPU* spu);
 void handle_OUT(SPU* spu);
@@ -108,7 +111,8 @@ CommandExecution command_handlers[] = {
     {CMD_JNE,     handle_JNE},
     {CMD_JMP,     handle_JMP},
     {CMD_CALL,    handle_CALL},
-    {CMD_RET,     handle_RET}
+    {CMD_RET,     handle_RET},
+    {CMD_SQRT,    handle_SQRT}
 };
 
 const int command_handlers_count = sizeof(command_handlers) / sizeof(command_handlers[0]);

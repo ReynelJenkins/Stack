@@ -10,8 +10,8 @@ typedef struct {
 
 Label labels[MAX_LABELS];
 int label_count = 0;
-int SecondRunRequired = 0;
-int SecondRunStarted = 0;
+int second_run_required = 0;
+int pass = 1;
 
 enum ArgType
 {
@@ -20,16 +20,6 @@ enum ArgType
     ARG_TYPE_REGISTER     = 2,
     ARG_TYPE_LABEL_NUMBER = 3
 };
-
-/*
-typedef struct
-{
-    const char* name;
-    int command_code;
-    enum ArgType has_arg;
-    const char* arg_type;
-} Command;
-*/
 
 struct Command
 {
@@ -52,19 +42,20 @@ struct AssemblerValues
 
 
 Command commands[] = {
-    {"ADD",     CMD_ADD,     ARG_TYPE_NO_ARG, NULL},
-    {"SUB",     CMD_SUB,     ARG_TYPE_NO_ARG, NULL},
-    {"MUL",     CMD_MUL,     ARG_TYPE_NO_ARG, NULL},
-    {"DIV",     CMD_DIV,     ARG_TYPE_NO_ARG, NULL},
-    {"OUT",     CMD_OUT,     ARG_TYPE_NO_ARG, NULL},
-    {"HLT",     CMD_HLT,     ARG_TYPE_NO_ARG, NULL},
-    {"IN",      CMD_IN,      ARG_TYPE_NO_ARG, NULL},
-    {"RET",     CMD_RET,     ARG_TYPE_NO_ARG, NULL},
-    {"PUSH",    CMD_PUSH,    ARG_TYPE_VALUE, "value"},
-    {"PUSHREG", CMD_PUSHREG, ARG_TYPE_REGISTER, "register"},
-    {"POPREG",  CMD_POPREG,  ARG_TYPE_REGISTER, "register"},
-    {"PUSHM",   CMD_PUSHM,   ARG_TYPE_REGISTER, "register"},
-    {"POPM",    CMD_POPM,    ARG_TYPE_REGISTER, "register"},
+    {"ADD",     CMD_ADD,     ARG_TYPE_NO_ARG,       NULL},
+    {"SUB",     CMD_SUB,     ARG_TYPE_NO_ARG,       NULL},
+    {"MUL",     CMD_MUL,     ARG_TYPE_NO_ARG,       NULL},
+    {"DIV",     CMD_DIV,     ARG_TYPE_NO_ARG,       NULL},
+    {"OUT",     CMD_OUT,     ARG_TYPE_NO_ARG,       NULL},
+    {"HLT",     CMD_HLT,     ARG_TYPE_NO_ARG,       NULL},
+    {"IN",      CMD_IN,      ARG_TYPE_NO_ARG,       NULL},
+    {"RET",     CMD_RET,     ARG_TYPE_NO_ARG,       NULL},
+    {"SQRT",    CMD_SQRT,    ARG_TYPE_NO_ARG,       NULL},
+    {"PUSH",    CMD_PUSH,    ARG_TYPE_VALUE,        "value"},
+    {"PUSHREG", CMD_PUSHREG, ARG_TYPE_REGISTER,     "register"},
+    {"POPREG",  CMD_POPREG,  ARG_TYPE_REGISTER,     "register"},
+    {"PUSHM",   CMD_PUSHM,   ARG_TYPE_REGISTER,     "register"},
+    {"POPM",    CMD_POPM,    ARG_TYPE_REGISTER,     "register"},
     {"JB",      CMD_JB,      ARG_TYPE_LABEL_NUMBER, "label/number"},
     {"JBE",     CMD_JBE,     ARG_TYPE_LABEL_NUMBER, "label/number"},
     {"JA",      CMD_JA,      ARG_TYPE_LABEL_NUMBER, "label/number"},
@@ -72,7 +63,7 @@ Command commands[] = {
     {"JE",      CMD_JE,      ARG_TYPE_LABEL_NUMBER, "label/number"},
     {"JNE",     CMD_JNE,     ARG_TYPE_LABEL_NUMBER, "label/number"},
     {"JMP",     CMD_JMP,     ARG_TYPE_LABEL_NUMBER, "label/number"},
-    {"CALL",    CMD_CALL,    ARG_TYPE_LABEL_NUMBER, "label/number"}
+    {"CALL",    CMD_CALL,    ARG_TYPE_LABEL_NUMBER, "label/number"},
 };
 
 const int commands_count = sizeof(commands) / sizeof(commands[0]);

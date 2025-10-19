@@ -1,0 +1,4 @@
+PUSH 17
+SQRT
+OUT
+HLT

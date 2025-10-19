@@ -241,7 +241,15 @@ void handle_DIV(SPU* spu)
     int a = 0, b = 0;
     StackPop(spu->stk, &a);
     StackPop(spu->stk, &b);
-    StackPush(spu->stk, b / a);  // осторожно с делением на 0!
+    StackPush(spu->stk, b / a);
+    spu->ip++;
+}
+
+void handle_SQRT(SPU* spu)
+{
+    int a = 0;
+    StackPop(spu->stk, &a);
+    StackPush(spu->stk, (int)pow(a, 0.5));
     spu->ip++;
 }
 
