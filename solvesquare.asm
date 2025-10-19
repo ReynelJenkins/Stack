@@ -1,4 +1,115 @@
-PUSH 17
-SQRT
+IN
+POPREG AX
+IN
+POPREG BX
+IN
+POPREG CX
+
+PUSHREG AX
+PUSH 0
+JE :a_zero
+
+PUSHREG CX
+PUSH 0
+JE :c_zero
+
+CALL :discr
+
+PUSHREG DX ;case discr below zero
+PUSH 0
+JB :discr_below_zero
+
+PUSHREG DX ;case discr equals zero
+PUSH 0
+JE :discr_equals_zero
+
+PUSHREG DX ;case discr above zero
+PUSH 0
+JA :discr_above_zero
+
+:a_zero
+PUSHREG CX
+PUSH -1
+MUL
+PUSHREG BX
+DIV
 OUT
 HLT
+
+:c_zero
+PUSH 0
+OUT
+PUSHREG BX
+PUSH -1
+MUL
+PUSHREG AX
+DIV
+OUT
+HLT
+
+:discr_below_zero
+PUSH 999999
+
+OUT
+
+HLT
+
+:discr_equals_zero
+PUSHREG BX
+PUSH -1
+MUL
+
+PUSH 2
+PUSHREG AX
+MUL
+DIV
+
+OUT
+
+HLT
+
+:discr_above_zero
+PUSHREG BX
+PUSH -1
+MUL
+
+PUSHREG DX
+SQRT
+ADD
+
+PUSH 2
+PUSHREG AX
+MUL
+DIV
+
+OUT
+
+PUSHREG BX
+PUSH -1
+MUL
+
+PUSHREG DX
+SQRT
+SUB
+
+PUSH 2
+PUSHREG AX
+MUL
+DIV
+
+OUT
+
+HLT
+
+:discr ;discriminant function
+PUSHREG BX
+PUSHREG BX
+MUL
+PUSH 4
+PUSHREG AX
+PUSHREG CX
+MUL
+MUL
+SUB
+POPREG DX
+RET

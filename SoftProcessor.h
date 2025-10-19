@@ -11,7 +11,7 @@ const int START_CODE_SIZE = 8;
 const int MAX_COMMAND_SIZE = 256;
 const int COMMANDS_VERSION = 3;
 const char *BYTE_CODE_SOURCE_FILE = "byte_code.bin";
-const int SIGN = 0xDA;
+const int SIGN = 0xDEADC0DE;
 const int HEADER_SIZE = 3;
 const int START_STACK_SIZE = 8;
 
