@@ -18,21 +18,33 @@ const int START_STACK_SIZE = 8;
 enum CMD
 {
     CMD_HLT     = 0,
+
     CMD_ADD     = 1,
-    CMD_PUSH    = 2,
-    CMD_DIV     = 3,
-    CMD_OUT     = 4,
-    CMD_PUSHREG = 5,
-    CMD_POPREG  = 6,
-    CMD_MUL     = 7,
-    CMD_SUB     = 8,
-    CMD_JB      = 9,
-    CMD_JBE     = 10,
-    CMD_JA      = 11,
-    CMD_JAE     = 12,
-    CMD_JE      = 13,
-    CMD_JNE     = 14,
-    CMD_JMP     = 15,
+    CMD_MUL     = 2,
+    CMD_SUB     = 3,
+    CMD_DIV     = 4,
+
+    CMD_IN      = 5,
+    CMD_OUT     = 6,
+
+    CMD_PUSH    = 7,
+
+    CMD_PUSHREG = 8,
+    CMD_POPREG  = 9,
+
+    CMD_PUSHM   = 10,
+    CMD_POPM    = 11,
+
+    CMD_JB      = 12,
+    CMD_JBE     = 13,
+    CMD_JA      = 14,
+    CMD_JAE     = 15,
+    CMD_JE      = 16,
+    CMD_JNE     = 17,
+    CMD_JMP     = 18,
+
+    CMD_RET     = 19,
+    CMD_CALL    = 20
 };
 
 #endif //SOFTPROCESSOR_H

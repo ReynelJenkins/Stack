@@ -9,7 +9,7 @@ FILE *my_fopen(const char *filename, const char *type)
     FILE *file = fopen(filename, type);
     if (file == NULL)
     {
-        printf("Ошибка: не удалось открыть файл %s\n", filename);
+        printf("FAILED open file: %s\n", filename);
         return nullptr;
     }
     return file;

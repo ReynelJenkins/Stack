@@ -2,14 +2,21 @@
 #include "assembler.h"
 #include "file.h"
 
-int main()
+int main(int argc, char *argv[])
 {
-    FILE *file = my_fopen("source.asm", "r");
+    const char *source_file_name = "source.asm";
+
+    if (argc > 1)
+    {
+        source_file_name = argv[1];
+    }
+
+    FILE *file = my_fopen(source_file_name, "r");
 
     int size = 0;
     int *code = TranslateToByteCode(file, &size);
 
-    if (SecondRun == 1)
+    if (SecondRunRequired == 1)
     {
         rewind(file);
 
@@ -31,30 +38,26 @@ int *TranslateToByteCode(FILE *f, int *code_size)
     assert(f);
     assert(code_size);
 
-    int *code = (int *)calloc(START_CODE_SIZE, sizeof(int));
-    if (code == NULL)
+    struct AssemblerValues asm_vals = {};
+    asm_vals.code = (int *)calloc(START_CODE_SIZE, sizeof(int));
+    if (asm_vals.code == nullptr)
     {
         return 0;
     }
 
-    int size = START_CODE_SIZE;
-    int pos = 0;
-    int line = 0;
-    int val = 0;
-    char reg_name[8];
-
-    char cmdstr[MAX_COMMAND_SIZE] = {};
-    while (fgets(cmdstr, sizeof(cmdstr), f) != NULL)
+    while (fgets(asm_vals.cmdstr, sizeof(asm_vals.cmdstr), f) != NULL)
     {
-        line++;
-        char *comment = strchr(cmdstr, ';');
+        asm_vals.line++;
+        char *comment = strchr(asm_vals.cmdstr, ';');
+
         if(comment != NULL)
         {
             *comment = '\0';
         }
 
         char cmd[MAX_COMMAND_SIZE];
-        int n_scanned = sscanf(cmdstr, "%s", cmd);
+        int n_scanned = sscanf(asm_vals.cmdstr, "%s", cmd);
+
         if (n_scanned <= 0)
         {
             continue;
@@ -62,157 +65,153 @@ int *TranslateToByteCode(FILE *f, int *code_size)
 
         if (cmd[0] == ':')
         {
-            if (label_count >= MAX_LABELS) {
+            if (label_count >= MAX_LABELS)
+            {
                 printf("Too many labels!\n");
                 return 0;
             }
 
             strcpy(labels[label_count].name, cmd + 1);
-            labels[label_count].addr = pos;
+            labels[label_count].addr = asm_vals.pos;
             label_count++;
 
             continue;
         }
 
-        if(pos > size - 2)
+        if(asm_vals.pos > asm_vals.size - 2)
         {
-            int *new_code = (int *)realloc(code, size * 2 * sizeof(int));
+            int *new_code = (int *)realloc(asm_vals.code, asm_vals.size * 2 * sizeof(int));
             if (new_code == NULL)
             {
                 return 0;
             }
-            code = new_code;
-            size *= 2;
+            asm_vals.code = new_code;
+            asm_vals.size *= 2;
         }
 
-        if (strcmp(cmd, "ADD") == 0)
+        int found = 0;
+        for (int i = 0; i < commands_count; i++)
         {
-            code[pos++] = CMD_ADD;
-        }
-
-        else if (strcmp(cmd, "PUSH") == 0)
-        {
-            if (sscanf(cmdstr, "%*s %d", &val) != 1)
+            if (strcmp(commands[i].name, cmd) == 0)
             {
-                printf("Invalid value (line %d)\n", line);
-                free(code);
+                found = 1;
+                asm_vals.code[asm_vals.pos++] = commands[i].command_code;
+                int error = GetArgument(&asm_vals, commands[i]);
 
-                return NULL;
+                if (error)
+                {
+                    return NULL;
+                }
+
+                break;
             }
-            code[pos++] = CMD_PUSH;
-            code[pos++] = val;
         }
 
-        else if (strcmp(cmd, "DIV") == 0)
+        if (!found)
         {
-            code[pos++] = CMD_DIV;
-        }
+            printf("Unknown command '%s' (line %d)\n", cmd, asm_vals.line);
+            free(asm_vals.code);
 
-        else if (strcmp(cmd, "OUT") == 0)
-        {
-            code[pos++] = CMD_OUT;
+            return NULL;
         }
+    }
 
-        else if (strcmp(cmd, "HLT") == 0)
-        {
-            code[pos++] = CMD_HLT;
-        }
+    SecondRunStarted = 1;
 
-        else if (strcmp(cmd, "PUSHREG") == 0)
+    *code_size = asm_vals.pos;
+
+    return asm_vals.code;
+}
+
+int GetArgument(struct AssemblerValues *vals, struct Command command)
+{
+    int val = 0;
+
+    switch (command.has_arg)
+    {
+        case ARG_TYPE_VALUE:
         {
-            if (sscanf(cmdstr, "%*s %s", reg_name))
+            if (sscanf(vals->cmdstr, "%*s %d", &val) != 1)
             {
-                printf("Invalid register name (line %d)\n", line);
-                free(code);
+                printf("Invalid %s (line %d)\n", command.arg_type, vals->line);
+                free(vals->code);
 
-                return NULL;
+                return 1;
             }
+            vals->code[(vals->pos)++] = val;
 
-            code[pos++] = CMD_PUSHREG;
-            code[pos++] = GetRegNumber(reg_name);
+            break;
         }
 
-        else if (strcmp(cmd, "POPREG") == 0)
+        case ARG_TYPE_REGISTER:
         {
-            if (sscanf(cmdstr, "%*s %s", reg_name) != 1)
+            if (sscanf(vals->cmdstr, "%*s %s", vals->reg_name) != 1)
             {
-                printf("Invalid register name (line %d)\n", line);
-                free(code);
+                printf("Invalid %s (line %d)\n", command.arg_type, vals->line);
+                free(vals->code);
 
-                return NULL;
+                return 1;
             }
 
-            code[pos++] = CMD_POPREG;
-            code[pos++] = GetRegNumber(reg_name);
+            int reg_num = GetRegNumber(vals->reg_name);
+
+            if (reg_num == -1)
+            {
+                printf("Invalid register name '%s' (line %d)\n", vals->reg_name, vals->line);
+                free(vals->code);
+
+                return 1;
+            }
+
+            vals->code[(vals->pos)++] = reg_num;
+
+            break;
         }
 
-        else if (strcmp(cmd, "MUL") == 0)
-        {
-            code[pos++] = CMD_MUL;
-        }
-
-        else if (strcmp(cmd, "SUB") == 0)
-        {
-            code[pos++] = CMD_SUB;
-        }
-
-        else if (strcmp(cmd, "JB") == 0 || strcmp(cmd, "JBE") == 0 ||
-                 strcmp(cmd, "JA") == 0 || strcmp(cmd, "JAE") == 0 ||
-                 strcmp(cmd, "JE") == 0 || strcmp(cmd, "JNE") == 0 ||
-                 strcmp(cmd, "JMP") == 0)
+        case ARG_TYPE_LABEL_NUMBER:
         {
             char arg[32] = {};
 
-            if (sscanf(cmdstr, "%*s %s", arg) != 1)
+            if (sscanf(vals->cmdstr, "%*s %s", arg) != 1)
             {
-                    printf("Invalid jump target '%s' (line %d)\n", arg, line);
-                    free(code);
+                printf("Invalid %s '%s' (line %d)\n", command.arg_type, arg, vals->line);
+                free(vals->code);
 
-                    return NULL;
+                return 1;
             }
-
-            int opcode = -1;
-            if (strcmp(cmd, "JB") == 0) opcode = CMD_JB;
-            else if (strcmp(cmd, "JBE") == 0) opcode = CMD_JBE;
-            else if (strcmp(cmd, "JA") == 0) opcode = CMD_JA;
-            else if (strcmp(cmd, "JAE") == 0) opcode = CMD_JAE;
-            else if (strcmp(cmd, "JE") == 0) opcode = CMD_JE;
-            else if (strcmp(cmd, "JNE") == 0) opcode = CMD_JNE;
-            else if (strcmp(cmd, "JMP") == 0) opcode = CMD_JMP;
-
-            code[pos++] = opcode;
 
             if (arg[0] == ':')
             {
-                code[pos++] = GetLabelPos(arg + 1);
+                if((vals->code[(vals->pos)++] = GetLabelPos(arg + 1)) == -2)
+                {
+                    printf("Unknown label '%s' (line %d)\n", arg, vals->line);
+
+                    return 1;
+                }
             }
 
             else
             {
                 if (sscanf(arg, "%d", &val) != 1)
                 {
-                    printf("Invalid jump target '%s' (line %d)\n", arg, line);
-                    free(code);
+                    printf("Invalid %s '%s' (line %d)\n", command.arg_type, arg, vals->line);
+                    free(vals->code);
 
-                    return NULL;
+                    return 1;
                 }
-                code[pos++] = val;
+
+                vals->code[(vals->pos)++] = val;
             }
+
+            break;
         }
 
-        else
-        {
-            printf("Syntax error! source.asm:%d\n", line);
-            free(code);
-
-            return NULL;
-        }
+        case ARG_TYPE_NO_ARG:
+        default:
+            break;
     }
 
-    *code_size = pos;
-    code = (int *)realloc(code, pos * sizeof(int));
-
-    return code;
+    return 0;
 }
 
 int GetLabelPos(const char *label)
@@ -225,12 +224,12 @@ int GetLabelPos(const char *label)
         }
     }
 
-    if (SecondRun == 1)
+    if(SecondRunStarted == 1)
     {
         return -2;
     }
 
-    SecondRun = 1;
+    SecondRunRequired = 1;
 
     return -1;
 }
@@ -272,15 +271,18 @@ int GetRegNumber(const char *reg_name)
         return 6;
     }
 
-    printf("Invalid register name!");
-
     return -1;
 }
 
 int WriteByteCode(FILE *file, int *code, int size)
 {
     assert(file);
-    assert(code);
+
+    if (code == nullptr)
+    {
+        printf("Failed to compile!");
+        return 1;
+    }
 
     fwrite(&SIGN, sizeof(int), 1, file);
 
