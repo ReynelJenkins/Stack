@@ -162,17 +162,18 @@ int SPUDumpFunc(struct SPU *spu,
     printf("SPU name: %s | SPU address: %p\n", spu_name, spu);
     printf("SPU Stack: ");
     PrintStack(spu->stk);
+
     for (int i = 0; i < spu->code_size; i++)
     {
+        if (i == spu->ip)
+        {
+            printf("\033[1;31m%02X \033[0m", spu->code[i]);
+
+            continue;
+        }
         printf("%02X ", spu->code[i]);
     }
     printf("\n");
-    for (int i = 0; i < spu->ip * 3; i++)
-    {
-        printf(" ");
-    }
-    printf("^^\n");
-
     printf("Registers:\n");
     for (int i = 0; i < 8; i++)
     {
@@ -285,14 +286,14 @@ void handle_POPREG(SPU* spu)
 
 void handle_PUSHM(SPU* spu)
 {
-    int addr = spu->regs[spu->ip + 1];
+    int addr = spu->regs[spu->code[spu->ip + 1]];
     StackPush(spu->stk, spu->ram[addr]);
     spu->ip += 2;
 }
 
 void handle_POPM(SPU* spu)
 {
-    int addr = spu->regs[spu->ip + 1];
+    int addr = spu->regs[spu->code[spu->ip + 1]];
     StackPop(spu->stk, &(spu->ram[addr]));
     spu->ip += 2;
 }
@@ -377,8 +378,6 @@ void handle_JMP(SPU* spu)
     spu->ip = spu->code[spu->ip + 1] + HEADER_SIZE;
 }
 
-
-//TODO: CALL/RET CHECK
 void handle_CALL(SPU* spu)
 {
     int target_addr = spu->code[spu->ip + 1] + HEADER_SIZE;

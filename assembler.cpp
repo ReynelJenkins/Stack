@@ -206,6 +206,31 @@ int GetArgument(struct AssemblerValues *vals, struct Command command)
             break;
         }
 
+        case ARG_TYPE_ADDR_REGISTER:
+        {
+            if (sscanf(vals->cmdstr, "%*s [%2[A-Z]]", vals->reg_name) != 1)
+            {
+                printf("Invalid %s (line %d)\n", command.arg_type, vals->line);
+                free(vals->code);
+
+                return 1;
+            }
+
+            int reg_num = GetRegNumber(vals->reg_name);
+
+            if (reg_num == -1)
+            {
+                printf("Invalid register name '%s' (line %d)\n", vals->reg_name, vals->line);
+                free(vals->code);
+
+                return 1;
+            }
+
+            vals->code[(vals->pos)++] = reg_num;
+
+            break;
+        }
+
         case ARG_TYPE_NO_ARG:
         default:
             break;

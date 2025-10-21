@@ -47,8 +47,8 @@ DIV
 OUT
 HLT
 
-:discr_below_zero
-PUSH 999999
+:discr_below_zero ;no roots
+PUSH 999999999
 
 OUT
 

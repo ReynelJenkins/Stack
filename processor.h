@@ -20,7 +20,7 @@ struct SPU
     int code_size = 0;
     int ip = HEADER_SIZE;
     int regs[8] = {};
-    int ram[64] = {};
+    int ram[1024] = {};
     Stack_t *stk = nullptr;
     Stack_t *ret_stk = nullptr;
 };
