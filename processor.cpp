@@ -184,34 +184,13 @@ int SPUDumpFunc(struct SPU *spu,
 
 enum SPUState ExecuteCode(struct SPU *spu)
 {
-    int command = -1;
-
-    while(spu->ip <= spu->code_size && command != CMD_HLT)
+    int command = 0;
+    while(spu->ip <= spu->code_size && spu->code[spu->ip] < CMD_HLT)
     {
         VerifySPU(spu);
         command = spu->code[spu->ip];
 
-        if (command == CMD_HLT)
-        {
-            break;
-        }
-
-        int found = 0;
-        for (int i = 0; i < command_handlers_count; i++)
-        {
-            if (command_handlers[i].command_code == command)
-            {
-                command_handlers[i].handler(spu);
-                found = 1;
-
-                break;
-            }
-        }
-
-        if (!found)
-        {
-            printf("Unknown command code: %d at IP: %d\n", command, spu->ip);
-        }
+        command_handlers[command].handler(spu);
 
         VerifySPU(spu);
     }
@@ -242,6 +221,12 @@ void handle_DIV(SPU* spu)
     int a = 0, b = 0;
     StackPop(spu->stk, &a);
     StackPop(spu->stk, &b);
+
+    if(a == 0)
+    {
+        spu->ip++;
+    }
+
     StackPush(spu->stk, b / a);
     spu->ip++;
 }
@@ -250,6 +235,12 @@ void handle_SQRT(SPU* spu)
 {
     int a = 0;
     StackPop(spu->stk, &a);
+
+    if(a < 0)
+    {
+        spu->ip++;
+    }
+
     StackPush(spu->stk, (int)pow(a, 0.5));
     spu->ip++;
 }

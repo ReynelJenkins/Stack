@@ -9,6 +9,8 @@ PUSHREG AX
 PUSH 0
 JE :a_zero
 
+;0 0 0 return inf roots
+
 PUSHREG CX
 PUSH 0
 JE :c_zero
@@ -28,11 +30,27 @@ PUSH 0
 JA :discr_above_zero
 
 :a_zero
+PUSHREG BX
+PUSH 0
+JE :a_b_zero
 PUSHREG CX
 PUSH -1
 MUL
 PUSHREG BX
 DIV
+OUT
+HLT
+
+:a_b_zero
+PUSHREG CX
+PUSH 0
+JE :a_b_c_zero
+PUSH -9999999
+OUT
+HLT
+
+:a_b_c_zero
+PUSH 9999999
 OUT
 HLT
 
@@ -96,9 +114,7 @@ PUSH 2
 PUSHREG AX
 MUL
 DIV
-
 OUT
-
 HLT
 
 :discr ;discriminant function

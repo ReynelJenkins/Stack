@@ -76,5 +76,9 @@ int WriteByteCode(FILE *f, int *code, int size);
 int GetRegNumber(const char *reg_name);
 int GetLabelPos(const char *label);
 int GetArgument(struct AssemblerValues *Vals, struct Command command);
+int GetCommand(char *cmd, struct AssemblerValues *asm_vals);
+int ExpandCodeBuffer(struct AssemblerValues *asm_vals);
+int FindLabel(char *cmd, struct AssemblerValues *asm_vals);
+void FindComments(char *cmdstr);
 
 #endif //ASSEMBLER_H

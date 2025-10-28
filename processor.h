@@ -91,18 +91,24 @@ typedef struct {
     CommandHandler handler;
 } CommandExecution;
 
-CommandExecution command_handlers[] = {
+CommandExecution command_handlers[] = { //ПО порядку
     {CMD_ADD,     handle_ADD},
-    {CMD_PUSH,    handle_PUSH},
-    {CMD_DIV,     handle_DIV},
-    {CMD_IN,      handle_IN},
-    {CMD_OUT,     handle_OUT},
-    {CMD_PUSHREG, handle_PUSHREG},
-    {CMD_POPREG,  handle_POPREG},
-    {CMD_PUSHM,   handle_PUSHM},
-    {CMD_POPM,    handle_POPM},
     {CMD_MUL,     handle_MUL},
     {CMD_SUB,     handle_SUB},
+    {CMD_DIV,     handle_DIV},
+    {CMD_SQRT,    handle_SQRT},
+
+    {CMD_IN,      handle_IN},
+    {CMD_OUT,     handle_OUT},
+
+    {CMD_PUSH,    handle_PUSH},
+
+    {CMD_PUSHREG, handle_PUSHREG},
+    {CMD_POPREG,  handle_POPREG},
+
+    {CMD_PUSHM,   handle_PUSHM},
+    {CMD_POPM,    handle_POPM},
+
     {CMD_JB,      handle_JB},
     {CMD_JBE,     handle_JBE},
     {CMD_JA,      handle_JA},
@@ -110,9 +116,9 @@ CommandExecution command_handlers[] = {
     {CMD_JE,      handle_JE},
     {CMD_JNE,     handle_JNE},
     {CMD_JMP,     handle_JMP},
+
     {CMD_CALL,    handle_CALL},
     {CMD_RET,     handle_RET},
-    {CMD_SQRT,    handle_SQRT}
 };
 
 const int command_handlers_count = sizeof(command_handlers) / sizeof(command_handlers[0]);

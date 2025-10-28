@@ -33,6 +33,67 @@ int main(int argc, char *argv[])
 
 }
 
+void FindComments(char *cmdstr)
+{
+    char *comment = strchr(cmdstr, ';');
+    if (comment != NULL)
+    {
+        *comment = '\0';
+    }
+}
+
+int FindLabel(char *cmd, struct AssemblerValues *asm_vals)
+{
+    if (cmd[0] != ':')
+    {
+        return 0;
+    }
+
+    if (label_count >= MAX_LABELS)
+    {
+        printf("Too many labels!\n");
+        return -1;
+    }
+
+    strcpy(labels[label_count].name, cmd + 1);
+    labels[label_count].addr = asm_vals->pos;
+    label_count++;
+
+    return 1;
+}
+
+int ExpandCodeBuffer(struct AssemblerValues *asm_vals)
+{
+    if (asm_vals->pos <= asm_vals->size - 2)
+    {
+        return 0;
+    }
+
+    int *new_code = (int *)realloc(asm_vals->code, asm_vals->size * 2 * sizeof(int));
+    if (new_code == NULL)
+    {
+        return -1;
+    }
+
+    asm_vals->code = new_code;
+    asm_vals->size *= 2;
+    return 0;
+}
+
+int GetCommand(char *cmd, struct AssemblerValues *asm_vals)
+{
+    for (int i = 0; i < commands_count; i++)
+    {
+        if (strcmp(commands[i].name, cmd) == 0)
+        {
+            asm_vals->code[asm_vals->pos++] = commands[i].command_code;
+            int error = GetArgument(asm_vals, commands[i]);
+            return error ? -1 : 1;
+        }
+    }
+    return 0;
+}
+
 int *TranslateToByteCode(FILE *f, int *code_size)
 {
     assert(f);
@@ -48,12 +109,7 @@ int *TranslateToByteCode(FILE *f, int *code_size)
     while (fgets(asm_vals.cmdstr, sizeof(asm_vals.cmdstr), f) != NULL)
     {
         asm_vals.line++;
-        char *comment = strchr(asm_vals.cmdstr, ';');
-
-        if(comment != NULL)
-        {
-            *comment = '\0';
-        }
+        FindComments(asm_vals.cmdstr);
 
         char cmd[MAX_COMMAND_SIZE];
         int n_scanned = sscanf(asm_vals.cmdstr, "%s", cmd);
@@ -63,63 +119,40 @@ int *TranslateToByteCode(FILE *f, int *code_size)
             continue;
         }
 
-        if (cmd[0] == ':')
+        int label_result = FindLabel(cmd, &asm_vals);
+
+        if (label_result == 1)
         {
-            if (label_count >= MAX_LABELS)
-            {
-                printf("Too many labels!\n");
-                return 0;
-            }
-
-            strcpy(labels[label_count].name, cmd + 1);
-            labels[label_count].addr = asm_vals.pos;
-            label_count++;
-
             continue;
         }
 
-        if(asm_vals.pos > asm_vals.size - 2)
+        else if (label_result == -1)
         {
-            int *new_code = (int *)realloc(asm_vals.code, asm_vals.size * 2 * sizeof(int));
-            if (new_code == NULL)
-            {
-                return 0;
-            }
-            asm_vals.code = new_code;
-            asm_vals.size *= 2;
+            return 0;
         }
 
-        int found = 0;
-        for (int i = 0; i < commands_count; i++)
+        if (ExpandCodeBuffer(&asm_vals) == -1)
         {
-            if (strcmp(commands[i].name, cmd) == 0)
-            {
-                found = 1;
-                asm_vals.code[asm_vals.pos++] = commands[i].command_code;
-                int error = GetArgument(&asm_vals, commands[i]);
-
-                if (error)
-                {
-                    return NULL;
-                }
-
-                break;
-            }
+            return 0;
         }
 
-        if (!found)
+        int command_result = GetCommand(cmd, &asm_vals);
+
+        if (command_result == -1)
+        {
+            return NULL;
+        }
+
+        else if (command_result == 0)
         {
             printf("Unknown command '%s' (line %d)\n", cmd, asm_vals.line);
             free(asm_vals.code);
-
             return NULL;
         }
     }
 
     pass++;
-
     *code_size = asm_vals.pos;
-
     return asm_vals.code;
 }
 
